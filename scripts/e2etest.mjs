@@ -136,6 +136,7 @@ store.set(
 const { onRequest: chatCompletions } = await import('../edge-functions/v1/chat/completions.js');
 const { onRequest: models } = await import('../edge-functions/v1/models.js');
 const { onRequest: login } = await import('../edge-functions/admin/login.js');
+const { onRequest: bootstrap } = await import('../edge-functions/admin/bootstrap.js');
 const { onRequest: keysAdmin } = await import('../edge-functions/admin/keys.js');
 const { onRequest: overviewAdmin } = await import('../edge-functions/admin/overview.js');
 const { onRequest: oauthStart } = await import('../edge-functions/admin/oauth/start.js');
@@ -258,6 +259,42 @@ assert('admin key created', String(createdKey.key).startsWith('sk-qwenwork-'), J
 
 res = await keysAdmin(ctx(new Request('https://example.com/admin/keys', { headers: { 'x-admin-token': 'bogus' } })));
 check('admin rejects bad session', res.status, 401);
+
+{
+  // bootstrap: initial password setup must hand back the one-time default API key
+  const seeded = store.get('settings');
+  const seededSession = store.get('admin_session');
+  store.delete('settings');
+  res = await bootstrap(
+    ctx(
+      new Request('https://example.com/admin/bootstrap', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'secret123' }),
+      })
+    )
+  );
+  check('bootstrap status', res.status, 200);
+  const boot = await res.json();
+  assert('bootstrap issues session token', typeof boot.token === 'string' && boot.token.length > 20, JSON.stringify(boot));
+  assert('bootstrap returns default api key', String(boot.apiKey).startsWith('sk-qwenwork-'), JSON.stringify(boot));
+  const bootStored = JSON.parse(store.get('settings'));
+  check('bootstrap marks initialized', bootStored.initialized, true);
+  check('bootstrap default key persisted', bootStored.apiKeys[0].key, boot.apiKey);
+
+  res = await bootstrap(
+    ctx(
+      new Request('https://example.com/admin/bootstrap', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'another1' }),
+      })
+    )
+  );
+  check('bootstrap rejected after init', res.status, 401);
+  store.set('settings', seeded);
+  store.set('admin_session', seededSession);
+}
 
 res = await overviewAdmin(ctx(new Request('https://example.com/admin/overview?credits=0', { headers: { 'x-admin-token': adminToken } })));
 const overview = await res.json();

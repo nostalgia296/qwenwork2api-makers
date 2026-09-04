@@ -286,6 +286,21 @@ function openSheet(html) {
   return $('#sheet-root .sheet');
 }
 
+function showNewKeySheet(key, title) {
+  const keySheet = openSheet([
+    '<h3>' + escapeHTML(title || 'API Key 已创建') + '</h3>',
+    '<p>请立即复制保存，关闭后不再完整显示。</p>',
+    '<div class="list"><div class="item"><div class="label"><div class="k mono">' + escapeHTML(key) + '</div></div></div></div>',
+    '<div class="group"><button class="btn" data-act="copy-key">复制</button></div>',
+    '<div class="group"><button class="btn secondary" data-act="close">完成</button></div>'
+  ].join(''));
+  keySheet.addEventListener('click', (e) => {
+    const act = e.target && e.target.dataset ? e.target.dataset.act : null;
+    if (act === 'copy-key') navigator.clipboard.writeText(key).then(() => toast('已复制'), () => {});
+    if (act === 'close') closeSheet();
+  });
+}
+
 async function bootstrapCheck() {
   let info;
   try {
@@ -307,7 +322,7 @@ async function bootstrapCheck() {
   if (!info.initialized) {
     $('#lock').classList.remove('hidden');
     $('#lock-caption').textContent = '设置管理密码（至少 6 位）';
-    $('#lock-hint').textContent = '首次使用：设置密码后会自动创建第一个 API Key';
+    $('#lock-hint').textContent = '首次使用：设置密码后会自动创建默认 API Key，仅显示一次，请立即复制保存';
     $('#lock-submit').textContent = '初始化';
     $('#lock-submit').dataset.mode = 'bootstrap';
     return;
@@ -334,6 +349,10 @@ $('#lock-submit').addEventListener('click', async () => {
       : await api('/admin/login', { method: 'POST', body: { password } });
     setToken(data.token);
     $('#lock-password').value = '';
+    if (mode === 'bootstrap' && data.apiKey) {
+      $('#lock').classList.add('hidden');
+      showNewKeySheet(data.apiKey, '初始化完成：默认 API Key');
+    }
     enterMain();
   } catch (e) {
     toast(e.message);
@@ -606,18 +625,7 @@ function renderSettings() {
       const created = await api('/admin/keys', { method: 'POST', body: { name } });
       await loadKeys();
       render();
-      const keySheet = openSheet([
-        '<h3>API Key 已创建</h3>',
-        '<p>请立即复制保存，关闭后不再完整显示。</p>',
-        '<div class="list"><div class="item"><div class="label"><div class="k mono">' + escapeHTML(created.key) + '</div></div></div></div>',
-        '<div class="group"><button class="btn" data-act="copy-key">复制</button></div>',
-        '<div class="group"><button class="btn secondary" data-act="close">完成</button></div>'
-      ].join(''));
-      keySheet.addEventListener('click', (e) => {
-        const act = e.target && e.target.dataset ? e.target.dataset.act : null;
-        if (act === 'copy-key') navigator.clipboard.writeText(created.key).then(() => toast('已复制'), () => {});
-        if (act === 'close') closeSheet();
-      });
+      showNewKeySheet(created.key, 'API Key 已创建');
     } catch (e) { toast(e.message); }
   });
 
