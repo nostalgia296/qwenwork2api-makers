@@ -7,7 +7,7 @@ directory = "./public"
 
 [[kv_namespaces]]
 binding = "QWENWORK_KV"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+id = "94faab0e49c742daa8857cfc227900a3"
 
 [triggers]
 crons = ["0 22 * * *"]
