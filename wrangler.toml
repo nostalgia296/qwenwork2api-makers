@@ -1,0 +1,13 @@
+name = "qwenwork2api"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+
+[assets]
+directory = "./public"
+
+[[kv_namespaces]]
+binding = "QWENWORK_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+[triggers]
+crons = ["0 22 * * *"]
