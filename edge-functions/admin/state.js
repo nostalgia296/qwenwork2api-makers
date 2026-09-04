@@ -4,7 +4,7 @@ import { json, preflight } from '../_shared/http.js';
 
 export async function onRequest(context) {
   if (context.request.method === 'OPTIONS') return preflight();
-  const kv = getKV(context.env);
+  const kv = await getKV(context.env);
   if (!kv) return json({ kvBound: false, initialized: false, authenticated: false });
   const settings = await getSettings(kv);
   const authenticated = await checkSession(kv, readAdminToken(context.request));

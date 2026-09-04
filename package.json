@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "QwenWork (千问办公) to OpenAI-compatible API, running on EdgeOne Pages Edge Functions + KV",
+  "description": "QwenWork (千问办公) to OpenAI-compatible API, running on EdgeOne Pages Edge Functions + KV/Blob",
+  "optionalDependencies": {
+    "@edgeone/pages-blob": "^0.0.16"
+  },
   "scripts": {
     "test": "node scripts/selftest.mjs && node scripts/smoke.mjs && node scripts/e2etest.mjs && node scripts/workertest.mjs",
     "deploy:cf": "npx -y wrangler@latest deploy"

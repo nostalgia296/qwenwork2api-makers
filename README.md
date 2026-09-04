@@ -8,9 +8,18 @@
 
 EdgeOne Makers 控制台导入本目录（或 `edgeone upload` 直接上传）。
 
-### 绑定 KV
+### 绑定 KV(可选)
 
-控制台「存储 - KV」开通账户 → 创建命名空间（如 `qwenwork2api`）→ 在项目中绑定，**变量名填 `QWENWORK_KV`**（`edge-functions/_shared/config.js` 的 `KV_NAMES` 里也兼容 `qwenwork_kv` / `my_kv` / `KV` 等名字）。
+控制台「存储 - KV」开通账户 → 创建命名空间(如 `qwenwork2api`)→ 在项目中绑定,**变量名填 `QWENWORK_KV`**(`edge-functions/_shared/config.js` 的 `KV_NAMES` 里也兼容 `qwenwork_kv` / `my_kv` / `KV` 等名字)。
+
+### 存储后端:KV 或 Blob
+
+项目按以下顺序选择存储后端:
+
+1. 环境绑定的 **KV**(如 `QWENWORK_KV`);
+2. **EdgeOne Blob 存储**(未绑定 KV 时自动回退,无需任何配置)。
+
+Blob 模式依赖 `@edgeone/pages-blob`(已声明为 optionalDependencies,部署时自动安装),数据存放在命名空间 `qwenwork2api` 中,可在控制台「存储 - Blob」只读查看。会话/登录等写后立即读的路径使用强一致读取。Cloudflare Workers 部署不受影响(无该 SDK 时自动使用其 KV 绑定)。
 
 ### 定时保活（可选）
 

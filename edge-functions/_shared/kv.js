@@ -1,6 +1,9 @@
 import { KV_NAMES } from './config.js';
+import { getBlobKV } from './blob.js';
 
-export function getKV(env) {
+// 解析存储后端:优先使用环境绑定的 KV,未绑定时回退到 EdgeOne Blob 存储。
+// 注意:返回 Promise,调用处需 await。
+export async function getKV(env) {
   if (env) {
     for (const name of KV_NAMES) {
       if (env[name]) return env[name];
@@ -10,7 +13,7 @@ export function getKV(env) {
     const found = globalThis[name];
     if (found) return found;
   }
-  return null;
+  return getBlobKV();
 }
 
 export async function getJSON(kv, key) {

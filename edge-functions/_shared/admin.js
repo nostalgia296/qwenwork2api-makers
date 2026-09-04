@@ -6,7 +6,7 @@ export async function guard(context, options) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return { response: preflight() };
 
-  const kv = getKV(env);
+  const kv = await getKV(env);
   if (!kv) return { response: error('KV namespace is not bound to this project', 500, 'kv_unbound') };
 
   const settings = await getSettings(kv);

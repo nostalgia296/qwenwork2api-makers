@@ -6,7 +6,7 @@ export async function onRequest(context) {
   if (context.request.method === 'OPTIONS') return preflight();
   if (context.request.method !== 'POST') return error('method not allowed', 405);
 
-  const kv = getKV(context.env);
+  const kv = await getKV(context.env);
   if (!kv) return error('KV namespace is not bound to this project', 500, 'kv_unbound');
 
   const settings = await getSettings(kv);

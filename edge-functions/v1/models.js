@@ -30,7 +30,7 @@ export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return preflight();
 
-  const kv = getKV(env);
+  const kv = await getKV(env);
   if (!kv) return error('KV namespace is not bound to this project', 500, 'kv_unbound');
 
   const settings = await getSettings(kv);

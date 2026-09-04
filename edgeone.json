@@ -1,7 +1,7 @@
 {
   "name": "qwenwork2api",
   "outputDirectory": "public",
-  "installCommand": "echo skip",
+  "installCommand": "npm install",
   "buildCommand": "echo skip",
   "headers": [
     {
