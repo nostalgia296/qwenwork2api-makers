@@ -38,7 +38,9 @@ export async function listKeys(kv, prefix) {
       const name = item && (item.name || item.key);
       if (name) out.push(name);
     }
-    if (result.complete || !result.cursor) break;
+    // EdgeOne returns `complete`, Cloudflare KV returns `list_complete`
+    const complete = result.complete === true || result.list_complete === true;
+    if (complete || !result.cursor) break;
     cursor = result.cursor;
   }
   return out;

@@ -16,6 +16,7 @@ export async function onRequest(context) {
   const provided = String(body.token || url.searchParams.get('token') || request.headers.get('x-cron-token') || '');
   const authorized =
     (settings.cronToken && provided === settings.cronToken) ||
+    (env && env.CRON_TOKEN && provided === env.CRON_TOKEN) ||
     (await checkSession(kv, readAdminToken(request))) ||
     !!matchAPIKey(settings, readBearer(request));
 

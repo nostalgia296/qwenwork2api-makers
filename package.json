@@ -5,6 +5,7 @@
   "type": "module",
   "description": "QwenWork (千问办公) to OpenAI-compatible API, running on EdgeOne Pages Edge Functions + KV",
   "scripts": {
-    "test": "node scripts/selftest.mjs && node scripts/smoke.mjs && node scripts/e2etest.mjs"
+    "test": "node scripts/selftest.mjs && node scripts/smoke.mjs && node scripts/e2etest.mjs && node scripts/workertest.mjs",
+    "deploy:cf": "npx -y wrangler@latest deploy"
   }
 }
