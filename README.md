@@ -1,6 +1,6 @@
 # qwenwork2api
 
-把**千问办公（QwenWork，gateway.qwenwork.cn）**转成 **OpenAI 兼容 API**，部署在 **EdgeOne Pages 边缘函数**或 **Cloudflare Workers** 上，账号与配置存 **KV**。
+把千问办公（QwenWork，gateway.qwenwork.cn）转成 **OpenAI 兼容 API**，部署在 **EdgeOne Pages 边缘函数**或 **Cloudflare Workers** 上，账号与配置存 **KV**。
 
 ## 部署到 EdgeOne Pages
 
