@@ -30,7 +30,7 @@ export const MAX_COMPLETION_TOKENS = 32768;
 export const STATIC_MODELS = [
   { key: 'pro', name: 'QwenWork 高级 (Pro)' },
   { key: 'flash', name: 'QwenWork Qwen3.8-Flash' },
-  { key: 'qwen3.8-max-preview', name: 'QwenWork Qwen3.8-Max' },
+  { key: 'qwen3.8-max', name: 'QwenWork Qwen3.8-Max' },
 ];
 
 export const KV_NAMES = ['QWENWORK_KV', 'qwenwork_kv', 'QWENWORK2API_KV', 'my_kv', 'KV'];
