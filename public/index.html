@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#f2f2f7">
+<title>QwenWork 2 API</title>
+<style>
+:root {
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --text: #000000;
+  --text-2: #3c3c43;
+  --muted: #8e8e93;
+  --sep: rgba(60, 60, 67, 0.12);
+  --blue: #007aff;
+  --green: #34c759;
+  --orange: #ff9500;
+  --red: #ff3b30;
+  --fill: rgba(120, 120, 128, 0.12);
+  --nav: rgba(249, 249, 249, 0.82);
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --card: #1c1c1e;
+    --text: #ffffff;
+    --text-2: #ebebf5;
+    --muted: #8e8e93;
+    --sep: rgba(84, 84, 88, 0.6);
+    --fill: rgba(120, 120, 128, 0.24);
+    --nav: rgba(28, 28, 30, 0.78);
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+#app { max-width: 720px; margin: 0 auto; min-height: 100vh; }
+
+.navbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--nav);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid var(--sep);
+  padding: 8px 16px 10px;
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+.navbar .title { font-size: 26px; font-weight: 700; letter-spacing: -0.4px; }
+.navbar .subtitle { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.navbar .row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+
+.screen { padding: 16px 16px 96px; }
+.group { margin-bottom: 22px; }
+.group-title {
+  font-size: 13px; color: var(--muted); text-transform: none;
+  margin: 0 0 7px 16px; font-weight: 400; letter-spacing: -0.1px;
+}
+.group-footer { font-size: 13px; color: var(--muted); margin: 7px 16px 0; }
+.list { background: var(--card); border-radius: var(--radius); overflow: hidden; }
+.item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; min-height: 46px;
+  border-bottom: 0.5px solid var(--sep);
+}
+.item:last-child { border-bottom: none; }
+.item .label { flex: 1; min-width: 0; }
+.item .label .k { font-size: 16px; }
+.item .label .v { font-size: 13px; color: var(--muted); margin-top: 2px; word-break: break-all; }
+.item .value { color: var(--muted); font-size: 16px; max-width: 55%; text-align: right; word-break: break-all; }
+.item.tappable { cursor: pointer; }
+.item.tappable:active { background: var(--fill); }
+
+.btn {
+  appearance: none; border: none; background: var(--blue); color: #fff;
+  font-size: 16px; font-weight: 600; border-radius: 12px;
+  padding: 13px 18px; width: 100%; cursor: pointer; font-family: inherit;
+}
+.btn:active { opacity: 0.75; }
+.btn.secondary { background: var(--fill); color: var(--blue); }
+.btn.danger { background: var(--red); }
+.btn.small { width: auto; padding: 7px 14px; font-size: 14px; border-radius: 999px; }
+.btn:disabled { opacity: 0.45; cursor: default; }
+
+input[type="password"], input[type="text"], input[type="number"], textarea, select {
+  width: 100%; font-family: inherit; font-size: 16px; color: var(--text);
+  background: transparent; border: none; outline: none; padding: 0;
+}
+textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+.field { background: var(--card); border-radius: var(--radius); padding: 13px 16px; margin-bottom: 12px; }
+.field .caption { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+
+.switch { position: relative; width: 51px; height: 31px; flex: 0 0 auto; }
+.switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.switch .track {
+  position: absolute; inset: 0; background: var(--fill); border-radius: 999px;
+  transition: background 0.22s; pointer-events: none;
+}
+.switch .track::after {
+  content: ""; position: absolute; width: 27px; height: 27px; border-radius: 50%;
+  background: #fff; top: 2px; left: 2px; transition: transform 0.22s;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16);
+}
+.switch input:checked + .track { background: var(--green); }
+.switch input:checked + .track::after { transform: translateX(20px); }
+
+.badge {
+  font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  background: var(--fill); color: var(--text-2); white-space: nowrap;
+}
+.badge.ok { background: rgba(52, 199, 89, 0.16); color: var(--green); }
+.badge.warn { background: rgba(255, 149, 0, 0.18); color: var(--orange); }
+.badge.err { background: rgba(255, 59, 48, 0.16); color: var(--red); }
+
+.tabbar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+  display: flex; background: var(--nav);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 0.5px solid var(--sep);
+  padding-bottom: env(safe-area-inset-bottom);
+  max-width: 720px; margin: 0 auto;
+}
+.tab {
+  flex: 1; padding: 8px 0 10px; text-align: center; cursor: pointer;
+  color: var(--muted); font-size: 11px; font-weight: 500;
+}
+.tab .icon { display: block; font-size: 21px; line-height: 1.2; }
+.tab.active { color: var(--blue); }
+
+.sheet-mask {
+  position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.4);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.sheet {
+  background: var(--bg); width: 100%; max-width: 720px;
+  border-radius: 20px 20px 0 0; padding: 8px 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  max-height: 88vh; overflow-y: auto;
+}
+.sheet .grabber { width: 38px; height: 5px; border-radius: 3px; background: var(--fill); margin: 6px auto 14px; }
+.sheet h3 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.3px; }
+.sheet p { margin: 0 0 14px; font-size: 14px; color: var(--muted); }
+
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 60;
+  background: rgba(0, 0, 0, 0.84); color: #fff; font-size: 14px;
+  padding: 11px 18px; border-radius: 999px; max-width: 86vw; text-align: center;
+  opacity: 0; transition: opacity 0.25s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+.card-hero {
+  background: linear-gradient(135deg, #0a84ff, #5e5ce6); color: #fff;
+  border-radius: 18px; padding: 18px; margin-bottom: 22px;
+}
+.card-hero .big { font-size: 30px; font-weight: 700; letter-spacing: -0.6px; }
+.card-hero .row3 { display: flex; gap: 18px; margin-top: 12px; }
+.card-hero .stat .n { font-size: 19px; font-weight: 600; }
+.card-hero .stat .l { font-size: 12px; opacity: 0.82; }
+.center { text-align: center; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.hidden { display: none !important; }
+.spinner {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--fill); border-top-color: var(--blue);
+  animation: spin 0.8s linear infinite; display: inline-block; vertical-align: -3px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty { padding: 44px 20px; text-align: center; color: var(--muted); font-size: 15px; }
+.link { color: var(--blue); text-decoration: none; word-break: break-all; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="lock" class="screen hidden">
+    <div style="height:88px"></div>
+    <h1 style="font-size:32px;letter-spacing:-0.7px;margin:0 0 6px 4px">QwenWork 2 API</h1>
+    <p style="color:var(--muted);margin:0 0 28px 4px;font-size:15px">千问办公 · OpenAI 兼容网关</p>
+    <div class="field">
+      <div class="caption" id="lock-caption">管理密码</div>
+      <input type="password" id="lock-password" placeholder="输入管理密码" autocomplete="current-password">
+    </div>
+    <button class="btn" id="lock-submit">解锁</button>
+    <p class="group-footer" id="lock-hint" style="text-align:center"></p>
+  </div>
+
+  <div id="main" class="hidden">
+    <div class="navbar">
+      <div class="row">
+        <div>
+          <div class="title" id="nav-title">概览</div>
+          <div class="subtitle" id="nav-subtitle"></div>
+        </div>
+        <button class="btn small secondary" id="nav-action">刷新</button>
+      </div>
+    </div>
+
+    <section class="screen" id="tab-overview"></section>
+    <section class="screen hidden" id="tab-accounts"></section>
+    <section class="screen hidden" id="tab-settings"></section>
+    <section class="screen hidden" id="tab-guide"></section>
+
+    <div class="tabbar">
+      <div class="tab active" data-tab="overview"><span class="icon">◈</span>概览</div>
+      <div class="tab" data-tab="accounts"><span class="icon">◎</span>账号</div>
+      <div class="tab" data-tab="settings"><span class="icon">⚙︎</span>设置</div>
+      <div class="tab" data-tab="guide"><span class="icon">❔</span>说明</div>
+    </div>
+  </div>
+</div>
+
+<div id="sheet-root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN_KEY = 'qwenwork2api_token';
+let token = localStorage.getItem(TOKEN_KEY) || '';
+let state = { tab: 'overview', overview: null, settings: null, keys: null, base: '' };
+
+function $(sel) { return document.querySelector(sel); }
+function setToken(t) { token = t; if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); }
+
+let toastTimer = null;
+function toast(message) {
+  const el = $('#toast');
+  el.textContent = message;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+async function api(path, options) {
+  const opts = options || {};
+  const headers = Object.assign({ 'content-type': 'application/json' }, opts.headers || {});
+  if (token) headers['x-admin-token'] = token;
+  const res = await fetch(path, { method: opts.method || 'GET', headers, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  let data = null;
+  try { data = await res.json(); } catch (_) { data = null; }
+  if (!res.ok) {
+    const message = (data && data.error && data.error.message) || ('HTTP ' + res.status);
+    const err = new Error(message);
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+function escapeHTML(value) {
+  return String(value === undefined || value === null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function fmtTime(ms) {
+  if (!ms) return '—';
+  const d = new Date(ms);
+  const pad = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+function fmtExpiry(seconds) {
+  if (!seconds) return '—';
+  const days = Math.floor((seconds * 1000 - Date.now()) / 86400000);
+  if (days > 0) return days + ' 天后';
+  const hours = Math.floor((seconds * 1000 - Date.now()) / 3600000);
+  if (hours > 0) return hours + ' 小时后';
+  return '已过期';
+}
+
+function closeSheet() { $('#sheet-root').innerHTML = ''; }
+
+function openSheet(html) {
+  $('#sheet-root').innerHTML = '<div class="sheet-mask"><div class="sheet"><div class="grabber"></div>' + html + '</div></div>';
+  const mask = $('#sheet-root .sheet-mask');
+  mask.addEventListener('click', (e) => { if (e.target === mask) closeSheet(); });
+  return $('#sheet-root .sheet');
+}
+
+async function bootstrapCheck() {
+  let info;
+  try {
+    info = await api('/admin/state');
+  } catch (e) {
+    $('#lock').classList.remove('hidden');
+    $('#lock-caption').textContent = '无法连接后端';
+    $('#lock-hint').textContent = e.message;
+    $('#lock-submit').disabled = true;
+    return;
+  }
+  if (!info.kvBound) {
+    $('#lock').classList.remove('hidden');
+    $('#lock-caption').textContent = 'KV 未绑定';
+    $('#lock-hint').textContent = '请在项目设置中绑定一个 KV 命名空间，变量名建议为 QWENWORK_KV';
+    $('#lock-submit').disabled = true;
+    return;
+  }
+  if (!info.initialized) {
+    $('#lock').classList.remove('hidden');
+    $('#lock-caption').textContent = '设置管理密码（至少 6 位）';
+    $('#lock-hint').textContent = '首次使用：设置密码后会自动创建第一个 API Key';
+    $('#lock-submit').textContent = '初始化';
+    $('#lock-submit').dataset.mode = 'bootstrap';
+    return;
+  }
+  if (info.authenticated && token) {
+    enterMain();
+    return;
+  }
+  setToken('');
+  $('#lock').classList.remove('hidden');
+  $('#lock-caption').textContent = '管理密码';
+  $('#lock-submit').textContent = '解锁';
+  $('#lock-submit').dataset.mode = 'login';
+}
+
+$('#lock-submit').addEventListener('click', async () => {
+  const password = $('#lock-password').value;
+  const mode = $('#lock-submit').dataset.mode;
+  if (!password) { toast('请输入密码'); return; }
+  $('#lock-submit').disabled = true;
+  try {
+    const data = mode === 'bootstrap'
+      ? await api('/admin/bootstrap', { method: 'POST', body: { password } })
+      : await api('/admin/login', { method: 'POST', body: { password } });
+    setToken(data.token);
+    $('#lock-password').value = '';
+    enterMain();
+  } catch (e) {
+    toast(e.message);
+  } finally {
+    $('#lock-submit').disabled = false;
+  }
+});
+$('#lock-password').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#lock-submit').click(); });
+
+async function enterMain() {
+  $('#lock').classList.add('hidden');
+  $('#main').classList.remove('hidden');
+  await Promise.all([loadOverview(), loadSettings(), loadKeys()]);
+  render();
+}
+
+async function loadOverview() {
+  state.overview = await api('/admin/overview');
+  state.base = state.overview.baseUrl || (location.origin + '/v1');
+}
+async function loadSettings() { state.settings = await api('/admin/settings'); }
+async function loadKeys() { state.keys = await api('/admin/keys'); }
+
+const TITLES = { overview: '概览', accounts: '账号', settings: '设置', guide: '说明' };
+
+function render() {
+  document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.tab));
+  $('#nav-title').textContent = TITLES[state.tab];
+  ['overview', 'accounts', 'settings', 'guide'].forEach((name) => {
+    $('#tab-' + name).classList.toggle('hidden', name !== state.tab);
+  });
+  const action = $('#nav-action');
+  if (state.tab === 'guide') { action.classList.add('hidden'); }
+  else { action.classList.remove('hidden'); action.textContent = '刷新'; }
+  if (state.tab === 'overview') renderOverview();
+  if (state.tab === 'accounts') renderAccounts();
+  if (state.tab === 'settings') renderSettings();
+  if (state.tab === 'guide') renderGuide();
+}
+
+function renderOverview() {
+  const ov = state.overview;
+  if (!ov) { $('#tab-overview').innerHTML = '<div class="empty">加载中…</div>'; return; }
+  const accounts = ov.accounts || [];
+  const usable = accounts.filter((a) => !a.disabled && !a.expired).length;
+  const stats = ov.stats || {};
+  let credits = 0;
+  let hasCredits = false;
+  accounts.forEach((a) => {
+    if (a.quota && typeof a.quota.remaining === 'number') { credits += a.quota.remaining; hasCredits = true; }
+  });
+  const el = $('#tab-overview');
+  el.innerHTML = [
+    '<div class="card-hero">',
+    '  <div class="big">' + usable + ' / ' + accounts.length + '</div>',
+    '  <div style="opacity:.86;font-size:14px;margin-top:2px">可用账号 / 全部账号</div>',
+    '  <div class="row3">',
+    '    <div class="stat"><div class="n">' + (stats.requests || 0) + '</div><div class="l">请求总数</div></div>',
+    '    <div class="stat"><div class="n">' + (stats.failures || 0) + '</div><div class="l">失败</div></div>',
+    '    <div class="stat"><div class="n">' + (hasCredits ? Math.round(credits) : '—') + '</div><div class="l">剩余额度</div></div>',
+    '  </div>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="group-title">接入信息</div>',
+    '  <div class="list">',
+    '    <div class="item"><div class="label"><div class="k">Base URL</div></div><div class="value mono">' + escapeHTML(ov.baseUrl || (location.origin + '/v1')) + '</div></div>',
+    '    <div class="item"><div class="label"><div class="k">API Key</div><div class="v">' + ((state.keys && state.keys.keys && state.keys.keys[0]) ? escapeHTML(state.keys.keys[0].masked) : '未创建') + '</div></div></div>',
+    '  </div>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="group-title">账号额度</div>',
+    accounts.length
+      ? '<div class="list">' + accounts.map((a) => {
+          const quota = a.quota;
+          const right = quota
+            ? (typeof quota.remaining === 'number' ? '剩 ' + Math.round(quota.remaining) : (a.quotaError ? '查询失败' : '—'))
+            : (a.quotaError ? '查询失败' : '—');
+          return '<div class="item"><div class="label"><div class="k">' + escapeHTML(a.nickname || a.uid || a.id) + '</div>' +
+            '<div class="v">' + (quota && quota.plan && quota.plan.name ? escapeHTML(quota.plan.name) + ' · ' : '') + '凭证 ' + fmtExpiry(a.expiresAt) + '</div></div>' +
+            '<div class="value">' + escapeHTML(right) + '</div></div>';
+        }).join('') + '</div>'
+      : '<div class="list"><div class="item"><div class="label"><div class="k">还没有账号</div><div class="v">前往「账号」标签添加</div></div></div></div>',
+    '</div>'
+  ].join('');
+}
+
+function renderAccounts() {
+  const ov = state.overview;
+  if (!ov) { $('#tab-accounts').innerHTML = '<div class="empty">加载中…</div>'; return; }
+  const accounts = ov.accounts || [];
+  const rows = accounts.map((a) => {
+    const status = a.disabled
+      ? '<span class="badge err">已停用</span>'
+      : (a.cooling ? '<span class="badge warn">冷却中</span>' : (a.expired ? '<span class="badge err">凭证过期</span>' : '<span class="badge ok">可用</span>'));
+    return '<div class="item" data-id="' + escapeHTML(a.id) + '">' +
+      '<div class="label"><div class="k">' + escapeHTML(a.nickname || a.uid || a.id) + '</div>' +
+      '<div class="v">' + escapeHTML(a.email || a.uid || '') + ' · 凭证 ' + fmtExpiry(a.expiresAt) + (a.lastError ? ' · ' + escapeHTML(a.lastError) : '') + '</div></div>' +
+      status + '<button class="btn small secondary" data-act="menu">管理</button></div>';
+  }).join('');
+  $('#tab-accounts').innerHTML = [
+    '<div class="group">',
+    '  <div class="group-title">账号列表</div>',
+    accounts.length ? '<div class="list">' + rows + '</div>' : '<div class="list"><div class="item"><div class="label"><div class="k">暂无账号</div><div class="v">点击下方按钮通过设备授权登录千问办公</div></div></div></div>',
+    '</div>',
+    '<div class="group">',
+    '  <button class="btn" id="add-account">添加账号（设备授权登录）</button>',
+    '  <div class="group-footer">登录走千问办公官方设备授权：生成授权链接后在浏览器中完成登录与授权，本页会自动等待结果。</div>',
+    '</div>'
+  ].join('');
+
+  const addBtn = $('#add-account');
+  if (addBtn) addBtn.addEventListener('click', startDeviceLogin);
+  $('#tab-accounts').querySelectorAll('[data-act="menu"]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.closest('.item').dataset.id;
+      openAccountMenu(id);
+    });
+  });
+}
+
+function openAccountMenu(id) {
+  const account = (state.overview.accounts || []).find((a) => a.id === id);
+  if (!account) return;
+  const sheet = openSheet([
+    '<h3>' + escapeHTML(account.nickname || account.uid || account.id) + '</h3>',
+    '<p>' + escapeHTML(account.email || account.uid || '') + ' · 凭证 ' + fmtExpiry(account.expiresAt) + '</p>',
+    '<div class="group"><button class="btn secondary" data-act="refresh">刷新凭证</button></div>',
+    '<div class="group"><button class="btn secondary" data-act="sync">同步昵称与邮箱</button></div>',
+    '<div class="group"><button class="btn secondary" data-act="toggle">' + (account.disabled ? '启用账号' : '停用账号') + '</button></div>',
+    '<div class="group"><button class="btn danger" data-act="delete">删除账号</button></div>',
+    '<div class="group"><button class="btn secondary" data-act="cancel">取消</button></div>'
+  ].join(''));
+
+  sheet.addEventListener('click', async (e) => {
+    const act = e.target && e.target.dataset ? e.target.dataset.act : null;
+    if (!act) return;
+    if (act === 'cancel') { closeSheet(); return; }
+    try {
+      if (act === 'refresh') { await api('/admin/accounts', { method: 'POST', body: { id, action: 'refresh' } }); toast('凭证已刷新'); }
+      if (act === 'sync') { await api('/admin/accounts', { method: 'POST', body: { id, action: 'sync' } }); toast('资料已同步'); }
+      if (act === 'toggle') { await api('/admin/accounts', { method: 'POST', body: { id, action: 'toggle' } }); toast('状态已更新'); }
+      if (act === 'delete') { await api('/admin/accounts?id=' + encodeURIComponent(id), { method: 'DELETE' }); toast('账号已删除'); }
+      closeSheet();
+      await loadOverview();
+      render();
+    } catch (err) {
+      toast(err.message);
+    }
+  });
+}
+
+async function startDeviceLogin() {
+  openSheet('<h3>正在生成授权链接</h3><p><span class="spinner"></span> 请稍候…</p>');
+  let start;
+  try {
+    start = await api('/admin/oauth/start', { method: 'POST', body: {} });
+  } catch (e) {
+    closeSheet();
+    toast(e.message);
+    return;
+  }
+  const sheet = openSheet([
+    '<h3>在浏览器中完成授权</h3>',
+    '<p>打开下方链接，登录千问办公并授权。完成后此窗口会自动更新。</p>',
+    '<div class="group"><div class="list"><div class="item"><div class="label"><div class="k mono" id="auth-url">' + escapeHTML(start.url) + '</div></div></div></div></div>',
+    '<div class="group"><button class="btn" data-act="open">在浏览器打开</button></div>',
+    '<div class="group"><button class="btn secondary" data-act="copy">复制链接</button></div>',
+    '<div class="group"><button class="btn secondary" data-act="cancel">取消</button></div>',
+    '<p id="poll-status" style="text-align:center"><span class="spinner"></span> 等待授权…</p>'
+  ].join(''));
+
+  const statusEl = $('#poll-status');
+  let stopped = false;
+
+  sheet.addEventListener('click', (e) => {
+    const act = e.target && e.target.dataset ? e.target.dataset.act : null;
+    if (act === 'open') window.open(start.url, '_blank');
+    if (act === 'copy') {
+      navigator.clipboard.writeText(start.url).then(() => toast('链接已复制'), () => toast('复制失败，请手动选择'));
+    }
+    if (act === 'cancel') { stopped = true; closeSheet(); }
+  });
+
+  const deadline = Date.now() + 10 * 60 * 1000;
+  while (!stopped && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 3000));
+    if (stopped) break;
+    try {
+      const result = await api('/admin/oauth/poll', { method: 'POST', body: { state: start.state } });
+      if (result.status === 'success') {
+        stopped = true;
+        closeSheet();
+        toast('账号已添加：' + (result.account.nickname || result.account.uid));
+        await loadOverview();
+        render();
+        return;
+      }
+      statusEl.innerHTML = '<span class="spinner"></span> 等待授权…（' + Math.max(0, Math.round((deadline - Date.now()) / 1000)) + 's）';
+    } catch (err) {
+      stopped = true;
+      statusEl.textContent = '登录失败：' + err.message;
+      return;
+    }
+  }
+  if (!stopped) statusEl.textContent = '登录已超时，请重新开始';
+}
+
+function renderSettings() {
+  const s = state.settings;
+  const keys = (state.keys && state.keys.keys) || [];
+  if (!s) { $('#tab-settings').innerHTML = '<div class="empty">加载中…</div>'; return; }
+  $('#tab-settings').innerHTML = [
+    '<div class="group">',
+    '  <div class="group-title">API Key</div>',
+    '  <div class="list">',
+    keys.length ? keys.map((k) =>
+      '<div class="item" data-key="' + escapeHTML(k.id) + '"><div class="label"><div class="k">' + escapeHTML(k.name) + '</div>' +
+      '<div class="v mono">' + escapeHTML(k.masked) + ' · ' + fmtTime(k.createdAt) + '</div></div>' +
+      '<button class="btn small secondary" data-act="delkey">删除</button></div>').join('')
+      : '<div class="item"><div class="label"><div class="k">还没有 API Key</div><div class="v">创建后即可用于 OpenAI 客户端</div></div></div>',
+    '  </div>',
+    '  <div class="group-footer">客户端请求头：Authorization: Bearer &lt;API Key&gt;</div>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="field"><div class="caption">新 Key 名称</div><input type="text" id="new-key-name" placeholder="例如 my-client"></div>',
+    '  <button class="btn" id="create-key">创建 API Key</button>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="group-title">网关</div>',
+    '  <div class="list">',
+    '    <div class="item"><div class="label"><div class="k">允许匿名访问</div><div class="v">关闭时客户端必须携带有效 API Key</div></div>' +
+    '      <label class="switch"><input type="checkbox" id="set-anon"' + (s.allowAnonymous ? ' checked' : '') + '><span class="track"></span></label></div>',
+    '    <div class="item"><div class="label"><div class="k">默认模型</div></div><div class="value">' +
+    '      <select id="set-model" style="text-align:right;color:var(--muted)">' +
+    ['pro', 'flash', 'qwen3.8-max-preview'].map((m) => '<option value="' + m + '"' + (s.defaultModel === m ? ' selected' : '') + '>' + m + '</option>').join('') +
+    '      </select></div></div>',
+    '    <div class="item"><div class="label"><div class="k">上游超时（毫秒）</div></div>' +
+    '      <div class="value"><input type="number" id="set-timeout" value="' + (s.requestTimeoutMs || 120000) + '" style="text-align:right;color:var(--muted)"></div></div>',
+    '  </div>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="group-title">屏蔽词</div>',
+    '  <div class="list">',
+    '    <div class="item"><div class="label"><div class="k">启用混淆</div><div class="v">在提示词与工具描述中对命中词插入零宽空格</div></div>' +
+    '      <label class="switch"><input type="checkbox" id="set-desen"' + (s.desensitize ? ' checked' : '') + '><span class="track"></span></label></div>',
+    '    <div class="item"><div class="label"><div class="k">当前生效词表</div><div class="v">' + (s.useDefaultTerms ? '内置默认表' : '自定义词表') + '，共 ' + s.activeTermsCount + ' 词</div></div></div>',
+    '  </div>',
+    '  <div style="margin-top:12px" class="field"><div class="caption">自定义词表（每行一个，留空使用内置表）</div>' +
+    '    <textarea id="set-terms" placeholder="Codex\nClaude Code">' + escapeHTML((s.desensitizeTerms || []).join('\n')) + '</textarea></div>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="group-title">安全</div>',
+    '  <div class="list">',
+    '    <div class="item"><div class="label"><div class="k">定时任务 Token</div><div class="v mono">' + escapeHTML(s.cronToken || '未生成') + '</div></div>' +
+    '      <button class="btn small secondary" data-act="copy-cron">复制</button></div>',
+    '  </div>',
+    '  <div class="group-footer">在 edgeone.json 的 schedules 中配置 payload {"token": "..."} 即可每天自动保活凭证。</div>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="field"><div class="caption">新的管理密码（留空表示不修改）</div><input type="password" id="set-password" placeholder="至少 6 位"></div>',
+    '  <button class="btn" id="save-settings">保存设置</button>',
+    '</div>',
+    '<div class="group"><button class="btn danger" id="logout">退出登录</button></div>'
+  ].join('');
+
+  $('#create-key').addEventListener('click', async () => {
+    const name = $('#new-key-name').value || 'key';
+    try {
+      const created = await api('/admin/keys', { method: 'POST', body: { name } });
+      await loadKeys();
+      render();
+      const keySheet = openSheet([
+        '<h3>API Key 已创建</h3>',
+        '<p>请立即复制保存，关闭后不再完整显示。</p>',
+        '<div class="list"><div class="item"><div class="label"><div class="k mono">' + escapeHTML(created.key) + '</div></div></div></div>',
+        '<div class="group"><button class="btn" data-act="copy-key">复制</button></div>',
+        '<div class="group"><button class="btn secondary" data-act="close">完成</button></div>'
+      ].join(''));
+      keySheet.addEventListener('click', (e) => {
+        const act = e.target && e.target.dataset ? e.target.dataset.act : null;
+        if (act === 'copy-key') navigator.clipboard.writeText(created.key).then(() => toast('已复制'), () => {});
+        if (act === 'close') closeSheet();
+      });
+    } catch (e) { toast(e.message); }
+  });
+
+  $('#tab-settings').querySelectorAll('[data-act="delkey"]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.closest('.item').dataset.key;
+      try {
+        await api('/admin/keys?id=' + encodeURIComponent(id), { method: 'DELETE' });
+        await loadKeys();
+        render();
+        toast('已删除');
+      } catch (e) { toast(e.message); }
+    });
+  });
+
+  const cronBtn = document.querySelector('[data-act="copy-cron"]');
+  if (cronBtn) cronBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(state.settings.cronToken || '').then(() => toast('已复制'), () => {});
+  });
+
+  $('#save-settings').addEventListener('click', async () => {
+    const body = {
+      allowAnonymous: $('#set-anon').checked,
+      desensitize: $('#set-desen').checked,
+      defaultModel: $('#set-model').value,
+      requestTimeoutMs: Number($('#set-timeout').value) || 120000,
+      desensitizeTerms: $('#set-terms').value.split('\n').map((t) => t.trim()).filter(Boolean),
+    };
+    const password = $('#set-password').value;
+    if (password) body.password = password;
+    try {
+      state.settings = await api('/admin/settings', { method: 'PUT', body });
+      toast('已保存');
+      render();
+    } catch (e) { toast(e.message); }
+  });
+
+  $('#logout').addEventListener('click', async () => {
+    try { await api('/admin/logout', { method: 'POST', body: {} }); } catch (_) {}
+    setToken('');
+    location.reload();
+  });
+}
+
+function renderGuide() {
+  const base = state.base || (location.origin + '/v1');
+  const key = (state.keys && state.keys.keys && state.keys.keys[0]) ? state.keys.keys[0].masked : 'YOUR_API_KEY';
+  const curl = 'curl ' + base + '/chat/completions \\\n  -H "Authorization: Bearer ' + key + '" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"model":"pro","messages":[{"role":"user","content":"你好"}],"stream":true}\'';
+  const py = 'from openai import OpenAI\n\nclient = OpenAI(\n    base_url="' + base + '",\n    api_key="' + key + '",\n)\n\nresp = client.chat.completions.create(\n    model="pro",\n    messages=[{"role": "user", "content": "你好"}],\n    stream=True,\n)\nfor chunk in resp:\n    print(chunk.choices[0].delta.content or "", end="")';
+  $('#tab-guide').innerHTML = [
+    '<div class="group">',
+    '  <div class="group-title">接入</div>',
+    '  <div class="list">',
+    '    <div class="item"><div class="label"><div class="k">Base URL</div></div><div class="value mono">' + escapeHTML(base) + '</div></div>',
+    '    <div class="item"><div class="label"><div class="k">可用模型</div><div class="v">pro · flash · qwen3.8-max-preview</div></div></div>',
+    '    <div class="item"><div class="label"><div class="k">兼容端点</div><div class="v">POST /v1/chat/completions、GET /v1/models</div></div></div>',
+    '  </div>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="group-title">curl</div>',
+    '  <div class="list"><div class="item"><div class="label"><div class="k mono" style="white-space:pre-wrap">' + escapeHTML(curl) + '</div></div></div></div>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="group-title">Python</div>',
+    '  <div class="list"><div class="item"><div class="label"><div class="k mono" style="white-space:pre-wrap">' + escapeHTML(py) + '</div></div></div></div>',
+    '</div>',
+    '<div class="group">',
+    '  <div class="group-title">说明</div>',
+    '  <div class="list">',
+    '    <div class="item"><div class="label"><div class="k">凭证保活</div><div class="v">凭证临近过期时会在请求前自动刷新；也可用定时任务每日触发 /cron/keepalive</div></div></div>',
+    '    <div class="item"><div class="label"><div class="k">账号轮询</div><div class="v">多账号按最近使用时间轮转，上游报错会临时冷却该账号</div></div></div>',
+    '    <div class="item"><div class="label"><div class="k">限制</div><div class="v">边缘函数请求体上限 1MB，单次执行 CPU 时间片 200ms（不含 I/O 等待）</div></div></div>',
+    '  </div>',
+    '</div>'
+  ].join('');
+}
+
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => { state.tab = tab.dataset.tab; render(); });
+});
+
+$('#nav-action').addEventListener('click', async () => {
+  try {
+    await Promise.all([loadOverview(), loadSettings(), loadKeys()]);
+    render();
+    toast('已刷新');
+  } catch (e) {
+    toast(e.message);
+    if (e.status === 401) { setToken(''); location.reload(); }
+  }
+});
+
+bootstrapCheck();
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "qwenwork2api",
+  "outputDirectory": "public",
+  "installCommand": "echo skip",
+  "buildCommand": "echo skip",
+  "headers": [
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
+  ],
+  "schedules": [
+    {
+      "name": "qwenwork-keepalive",
+      "cron": "0 22 * * *",
+      "path": "/cron/keepalive",
+      "method": "POST",
+      "payload": { "token": "REPLACE_WITH_CRON_TOKEN_FROM_SETTINGS_PAGE" },
+      "timezone": "Asia/Shanghai"
+    }
+  ]
+}
