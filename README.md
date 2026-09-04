@@ -6,7 +6,7 @@
 
 ### 创建项目
 
-EdgeOne Nakers 控制台导入本目录（或 `edgeone upload` 直接上传）。
+EdgeOne Makers 控制台导入本目录（或 `edgeone upload` 直接上传）。
 
 ### 绑定 KV
 
