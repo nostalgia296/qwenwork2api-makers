@@ -204,6 +204,86 @@ const lastCall = upstreamCalls[upstreamCalls.length - 1];
 check('chat sync mapped model key', JSON.parse(lastCall.body).model_config.key, 'qwen3.8-max-preview');
 check('chat sync system extracted', JSON.parse(lastCall.body).system, 'be brief');
 
+// ---- 图片（多模态）上行 ----
+const dataUrl = 'data:image/png;base64,iVBORw0KGgo=';
+res = await chatCompletions(
+  ctx(
+    chatRequest(
+      {
+        model: 'pro',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: '这张图里是什么？' },
+              { type: 'image_url', image_url: { url: dataUrl } },
+              { type: 'input_image', image_url: { url: 'https://x/a.jpg' } },
+            ],
+          },
+        ],
+      },
+      'sk-test-key'
+    )
+  )
+);
+check('chat image status', res.status, 200);
+const imgBody = JSON.parse(upstreamCalls[upstreamCalls.length - 1].body);
+check('chat image message count', imgBody.messages.length, 1);
+check('chat image content emptied', imgBody.messages[0].content, '');
+check('chat image contents order', imgBody.messages[0].contents.map((p) => p.type), ['image_url', 'image_url', 'text']);
+check('chat image data url kept', imgBody.messages[0].contents[0].image_url.url, dataUrl);
+check('chat image http url kept', imgBody.messages[0].contents[1].image_url.url, 'https://x/a.jpg');
+check('chat image text kept', imgBody.messages[0].contents[2].text, '这张图里是什么？');
+assert('chat image response_meta present', !!imgBody.messages[0].response_meta, JSON.stringify(imgBody.messages[0]));
+check('chat image is_vl flag', imgBody.chat_context.extra.modelConfig.is_vl, true);
+check('chat image prompt text', imgBody.chat_context.text, '这张图里是什么？');
+
+// 纯图片消息不能被丢弃
+res = await chatCompletions(
+  ctx(
+    chatRequest(
+      { model: 'pro', messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: dataUrl } }] }] },
+      'sk-test-key'
+    )
+  )
+);
+check('chat image-only status', res.status, 200);
+const onlyBody = JSON.parse(upstreamCalls[upstreamCalls.length - 1].body);
+check('chat image-only contents', onlyBody.messages[0].contents.map((p) => p.type), ['image_url']);
+check('chat image-only url', onlyBody.messages[0].contents[0].image_url.url, dataUrl);
+
+res = await chatCompletions(ctx(chatRequest({ model: 'pro', messages: [{ role: 'user', content: 'hi' }] }, 'sk-test-key')));
+const plainBody = JSON.parse(upstreamCalls[upstreamCalls.length - 1].body);
+check('chat plain role untouched', plainBody.messages[0].role, 'user');
+check('chat plain content untouched', plainBody.messages[0].content, 'hi');
+assert('chat plain has no contents', plainBody.messages[0].contents === undefined, JSON.stringify(plainBody.messages[0]));
+
+const { buildBody } = await import('../edge-functions/_shared/body.js');
+const desensitized = JSON.parse(
+  buildBody(
+    {
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: '<system-reminder>secret-token</system-reminder>' },
+            { type: 'image_url', image_url: { url: dataUrl } },
+          ],
+        },
+      ],
+    },
+    'pro',
+    (s) => String(s).replaceAll('secret-token', '[REDACTED]')
+  )
+);
+check('desensitize keeps image part', desensitized.messages[0].contents.map((p) => p.type), ['image_url', 'text']);
+check('desensitize keeps image url', desensitized.messages[0].contents[0].image_url.url, dataUrl);
+assert(
+  'desensitize redacts text part',
+  desensitized.messages[0].contents[1].text.includes('[REDACTED]'),
+  desensitized.messages[0].contents[1].text
+);
+
 res = await models(ctx(new Request('https://example.com/v1/models', { headers: { authorization: 'Bearer sk-test-key' } })));
 const modelList = await res.json();
 check('models object', modelList.object, 'list');
